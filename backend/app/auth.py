@@ -1,6 +1,10 @@
 """
 Authentication utilities
 """
+import os
+# Disable passlib's bcrypt bug detection to avoid initialization errors
+os.environ.setdefault('PASSLIB_BCRYPT_DISABLE_WRAP_BUG_DETECTION', '1')
+
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -11,7 +15,9 @@ from sqlalchemy.orm import Session
 from app.database import get_db, AdminUser
 from app.config import settings
 
+# Initialize CryptContext
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 security = HTTPBearer()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
