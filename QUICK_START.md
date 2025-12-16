@@ -138,6 +138,8 @@ SELECT * FROM employees;
 - Vérifier la qualité des images
 - Consulter les logs du backend
 
+cd C:\Users\hp\FaceRecognitionSystem; psql -U postgres -d face_recognition_db -c "\dt"
+
 ---
 
 ## Documentation complète

@@ -50,7 +50,6 @@ class FaceRecognitionService:
         """
         try:
             img = Image.open(image_path).convert('RGB')
-            img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
             
             # Détecter le visage avec MTCNN
             boxes, probs = self.mtcnn.detect(img, landmarks=False)
@@ -62,16 +61,39 @@ class FaceRecognitionService:
             best_idx = np.argmax(probs)
             box = boxes[best_idx]
             
-            # Extraire et aligner le visage
-            face = self.mtcnn.extract(img, [box], save_path=None)
-            
-            if face is None or len(face) == 0:
+            # S'assurer que box est un array 1D avec 4 éléments [x1, y1, x2, y2]
+            box = np.array(box, dtype=np.float32).flatten()
+            if len(box) != 4:
                 return None
             
-            return face[0]
+            # Extraire et aligner le visage - extract attend un array de shape (N, 4)
+            # où N est le nombre de visages
+            box_array = box.reshape(1, 4)
+            face = self.mtcnn.extract(img, box_array, save_path=None)
+            
+            if face is None:
+                return None
+            
+            # Convertir en numpy array si c'est un tensor
+            if torch.is_tensor(face):
+                face = face.cpu().numpy()
+            
+            # extract retourne un tensor/array de shape (N, C, H, W) où N=1
+            # On veut retourner (C, H, W) donc on prend le premier élément
+            if isinstance(face, np.ndarray):
+                if face.ndim == 4:  # (1, C, H, W)
+                    face = face[0]  # (C, H, W)
+                elif face.ndim == 3:  # (C, H, W) déjà bon
+                    pass
+                else:
+                    return None
+            
+            return face
         
         except Exception as e:
             print(f"Error detecting face: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     def get_embedding(self, image_path: str) -> Optional[np.ndarray]:
